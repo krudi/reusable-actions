@@ -13,7 +13,7 @@ jobs:
     build:
         runs-on: ubuntu-latest
         steps:
-            - uses: krudi/reusable-actions/.github/actions/node-build
+            - uses: krudi/reusable-actions/.github/actions/node-build@main
               with:
                   node_version: '22.18.0'
                   nextjs: 'false'

@@ -15,7 +15,7 @@ blocks instead of duplicating setup logic across repos.
 
 1. Create a workflow in your project (e.g. `.github/workflows/ci.yaml`).
 2. Use the action you need:
-   `uses: krudi/reusable-actions/.github/actions/<action>`.
+   `uses: krudi/reusable-actions/.github/actions/<action>@main`.
 
 Usage examples (with inputs) live alongside each action:
 

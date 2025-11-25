@@ -14,7 +14,7 @@ jobs:
     lint:
         runs-on: ubuntu-latest
         steps:
-            - uses: krudi/reusable-actions/.github/actions/node-build-lint
+            - uses: krudi/reusable-actions/.github/actions/node-build-lint@main
               with:
                   node_version: '22.18.0'
                   nextjs: 'false'

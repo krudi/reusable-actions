@@ -14,7 +14,7 @@ jobs:
     typecheck:
         runs-on: ubuntu-latest
         steps:
-            - uses: krudi/reusable-actions/.github/actions/node-typecheck
+            - uses: krudi/reusable-actions/.github/actions/node-typecheck@main
               with:
                   node_version: '22.18.0'
                   typecheck_command: 'tsc'
