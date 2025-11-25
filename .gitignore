@@ -1,0 +1,29 @@
+# Environment variables
+
+*.env
+!.env-*
+
+# Dependency directories
+
+node_modules
+
+# macOS and iOS files
+
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Compiled files
+
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Secret files
+
+*.der
+*.key
+*.pem

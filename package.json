@@ -1,0 +1,42 @@
+{
+    "$schema": "https://json.schemastore.org/package.json",
+    "name": "reusable-actions",
+    "description": "Composite actions for common Node.js CI steps. Keep workflows lean by reusing these blocks instead of duplicating setup logic across repos.",
+    "license": "MIT",
+    "author": {
+        "name": "krudi",
+        "email": "patryk.kudlik@gmail.com",
+        "url": "https://github.com/krudi"
+    },
+    "private": false,
+    "homepage": "https://github.com/krudi/reusable-actions#readme",
+    "bugs": {
+        "url": "https://github.com/krudi/reusable-actions/issue"
+    },
+    "keywords": [
+        "github-actions",
+        "composite-actions",
+        "automation",
+        "ci",
+        "nodejs",
+        "typescript",
+        "javascript"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/krudi/rreusable-actions.git"
+    },
+    "engines": {
+        "node": ">= 22.18.0",
+        "npm": ">= 11.6.2"
+    },
+    "packageManager": "npm@11.6.2",
+    "type": "module",
+    "scripts": {
+        "lint:prettier": "prettier --check .",
+        "lint:prettier:fix": "prettier --write --cache ."
+    },
+    "devDependencies": {
+        "@krudi/prettier-config": "^0.1.6"
+    }
+}
