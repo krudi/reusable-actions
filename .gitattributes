@@ -43,8 +43,7 @@ tsconfig*.json  text eol=lf diff=json
 *.woff2         binary
 
 # Export rules
-/.github/        export-ignore
-/.vscode/        export-ignore
+.vscode/         export-ignore
 .env             export-ignore
 .env.*           export-ignore
 node_modules/    export-ignore
