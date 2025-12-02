@@ -1,20 +1,21 @@
-# Environment variables
-
+# Environment
 *.env
 !.env-*
 
-# Dependency directories
-
+# Dependencies
 node_modules
 
-# macOS and iOS files
+# Build output
+build
+dist
+dev-dist
 
+# OS files
 .DS_Store
 .AppleDouble
 .LSOverride
 
-# Compiled files
-
+# Compiled artifacts
 *.com
 *.class
 *.dll
@@ -22,8 +23,7 @@ node_modules
 *.o
 *.so
 
-# Secret files
-
+# Secrets
 *.der
 *.key
 *.pem
