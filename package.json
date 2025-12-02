@@ -2,6 +2,7 @@
     "$schema": "https://json.schemastore.org/package.json",
     "name": "reusable-actions",
     "description": "Composite actions for common Node.js CI steps. Keep workflows lean by reusing these blocks instead of duplicating setup logic across repos.",
+    "version": "0.1.0",
     "license": "MIT",
     "author": {
         "name": "krudi",
@@ -11,7 +12,7 @@
     "private": false,
     "homepage": "https://github.com/krudi/reusable-actions#readme",
     "bugs": {
-        "url": "https://github.com/krudi/reusable-actions/issue"
+        "url": "https://github.com/krudi/reusable-actions/issues"
     },
     "keywords": [
         "github-actions",
@@ -24,7 +25,7 @@
     ],
     "repository": {
         "type": "git",
-        "url": "https://github.com/krudi/rreusable-actions.git"
+        "url": "https://github.com/krudi/reusable-actions.git"
     },
     "engines": {
         "node": ">= 22.18.0",
