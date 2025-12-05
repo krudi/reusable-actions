@@ -38,6 +38,6 @@
         "lint:prettier:fix": "prettier --write --cache ."
     },
     "devDependencies": {
-        "@krudi/prettier-config": "^0.1.6"
+        "@krudi/prettier-config": "^0.1.7"
     }
 }
