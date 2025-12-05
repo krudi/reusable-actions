@@ -1,11 +1,11 @@
-# Environment
+# Environment files
 *.env
 !.env-*
 
-# Dependencies
+# Dependencies files
 node_modules
 
-# Build output
+# Build output files
 build
 dist
 dev-dist
@@ -15,7 +15,7 @@ dev-dist
 .AppleDouble
 .LSOverride
 
-# Compiled artifacts
+# Compiled artifacts files
 *.com
 *.class
 *.dll
@@ -23,7 +23,7 @@ dev-dist
 *.o
 *.so
 
-# Secrets
+# Secrets files
 *.der
 *.key
 *.pem
