@@ -1,19 +1,9 @@
 {
     "$schema": "https://json.schemastore.org/package.json",
     "name": "reusable-actions",
-    "description": "Composite actions for common Node.js CI steps. Keep workflows lean by reusing these blocks instead of duplicating setup logic across repos.",
     "version": "0.1.0",
-    "license": "MIT",
-    "author": {
-        "name": "krudi",
-        "email": "patryk.kudlik@gmail.com",
-        "url": "https://github.com/krudi"
-    },
     "private": false,
-    "homepage": "https://github.com/krudi/reusable-actions#readme",
-    "bugs": {
-        "url": "https://github.com/krudi/reusable-actions/issues"
-    },
+    "description": "Composite actions for common Node.js CI steps. Keep workflows lean by reusing these blocks instead of duplicating setup logic across repos.",
     "keywords": [
         "github-actions",
         "composite-actions",
@@ -23,21 +13,31 @@
         "typescript",
         "javascript"
     ],
+    "homepage": "https://github.com/krudi/reusable-actions#readme",
+    "bugs": {
+        "url": "https://github.com/krudi/reusable-actions/issues"
+    },
     "repository": {
         "type": "git",
         "url": "https://github.com/krudi/reusable-actions.git"
     },
-    "engines": {
-        "node": ">= 22.18.0",
-        "npm": ">= 11.6.2"
+    "license": "MIT",
+    "author": {
+        "name": "krudi",
+        "email": "patryk.kudlik@gmail.com",
+        "url": "https://github.com/krudi"
     },
-    "packageManager": "npm@11.6.2",
     "type": "module",
     "scripts": {
         "lint:prettier": "prettier --check . --cache --cache-strategy metadata --cache-location .cache/.prettiercache",
         "lint:prettier:fix": "prettier --write . --cache --cache-strategy metadata --cache-location .cache/.prettiercache"
     },
     "devDependencies": {
-        "@krudi/prettier-config": "^0.1.7"
+        "@krudi/prettier-config": "^0.1.8"
+    },
+    "packageManager": "npm@11.6.4",
+    "engines": {
+        "node": ">= 22.18.0",
+        "npm": ">= 11.6.4"
     }
 }
