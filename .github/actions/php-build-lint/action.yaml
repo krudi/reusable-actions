@@ -1,0 +1,86 @@
+name: PHP Build Lint
+description: Set up PHP, cache Composer dependencies, install, and run newline-separated lint commands
+
+inputs:
+  php_version:
+    description: "PHP version"
+    required: false
+    default: "8.3"
+
+  extensions:
+    description: "Comma-separated PHP extensions"
+    required: false
+    default: "mbstring, dom, zip"
+
+  tools:
+    description: "PHP tooling to install"
+    required: false
+    default: "composer:v2.5"
+
+  install_command:
+    description: "Command to install PHP dependencies"
+    required: false
+    default: "composer install --no-progress --ignore-platform-reqs"
+
+  lint_commands:
+    description: "Newline-separated commands to run"
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+
+    - name: Set up PHP environment
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ inputs.php_version }}
+        extensions: ${{ inputs.extensions }}
+        tools: ${{ inputs.tools }}
+
+    - name: Cache Composer dependencies
+      uses: actions/cache@v4
+      with:
+        key: "php${{ inputs.php_version }}-composer-${{ hashFiles('**/composer.lock') }}-${{ hashFiles('**/composer.json') }}"
+        path: ~/.cache/composer
+        restore-keys: |
+          php${{ inputs.php_version }}-composer-
+
+    - name: Install dependencies
+      shell: bash
+      run: ${{ inputs.install_command }}
+
+    - name: Run lint commands
+      shell: bash
+      run: |
+        cmds="${{ inputs.lint_commands }}"
+
+        if [ -z "$cmds" ]; then
+          echo "No lint_commands provided. Skipping linting."
+          exit 0
+        fi
+
+        echo "Running lint commands:"
+        echo "$cmds"
+
+        while IFS= read -r cmd; do
+          # Trim whitespace
+          cmd="$(echo "$cmd" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+          [ -z "$cmd" ] && continue
+
+          # Trim leading "- " if present (to support YAML lists in a block)
+          if [[ "$cmd" == "- "* ]]; then
+            cmd="${cmd:2}"
+          fi
+
+          # Drop surrounding quotes if present
+          cmd="${cmd%\"}"
+          cmd="${cmd#\"}"
+
+          [ -z "$cmd" ] && continue
+
+          echo "> $cmd"
+          eval "$cmd"
+        done <<< "$cmds"

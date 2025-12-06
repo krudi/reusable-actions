@@ -1,0 +1,48 @@
+name: PHP Build
+description: Set up PHP, cache Composer dependencies, and install
+
+inputs:
+  php_version:
+    description: "PHP version"
+    required: false
+    default: "8.3"
+
+  extensions:
+    description: "Comma-separated PHP extensions"
+    required: false
+    default: "mbstring, dom, zip"
+
+  tools:
+    description: "PHP tooling to install"
+    required: false
+    default: "composer:v2.5"
+
+  install_command:
+    description: "Command to install PHP dependencies"
+    required: false
+    default: "composer install --no-progress --ignore-platform-reqs"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+
+    - name: Set up PHP environment
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ inputs.php_version }}
+        extensions: ${{ inputs.extensions }}
+        tools: ${{ inputs.tools }}
+
+    - name: Cache Composer dependencies
+      uses: actions/cache@v4
+      with:
+        key: "php${{ inputs.php_version }}-composer-${{ hashFiles('**/composer.lock') }}-${{ hashFiles('**/composer.json') }}"
+        path: ~/.cache/composer
+        restore-keys: |
+          php${{ inputs.php_version }}-composer-
+
+    - name: Install dependencies
+      shell: bash
+      run: ${{ inputs.install_command }}

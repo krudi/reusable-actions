@@ -10,6 +10,8 @@ logic across repos.
 | Node Build | `.github/actions/node-build`      | Install dependencies, optional Next.js cache, run `npm run build`.                |
 | Node Lint  | `.github/actions/node-build-lint` | Install dependencies, optional Next.js cache, run newline-separated lint scripts. |
 | Typecheck  | `.github/actions/node-typecheck`  | Install dependencies, run a single typecheck script.                              |
+| PHP Build  | `.github/actions/php-build`       | Set up PHP, cache Composer deps, and install.                                     |
+| PHP Lint   | `.github/actions/php-build-lint`  | Set up PHP, cache Composer deps, install, and run newline-separated commands.     |
 
 ## Quick start
 
@@ -21,6 +23,8 @@ Usage examples (with inputs) live alongside each action:
 - [`node-build`](.github/actions/node-build/README.md)
 - [`node-build-lint`](.github/actions/node-build-lint/README.md)
 - [`node-typecheck`](.github/actions/node-typecheck/README.md)
+- [`php-build`](.github/actions/php-build/README.md)
+- [`php-build-lint`](.github/actions/php-build-lint/README.md)
 
 ## Inputs
 
@@ -45,3 +49,22 @@ Usage examples (with inputs) live alongside each action:
 | ------------------- | --------- | ---------------------------------------------------------- |
 | `node_version`      | `22.18.0` | Node.js version to install.                                |
 | `typecheck_command` | `""`      | `package.json` script to run; skipped if empty or missing. |
+
+### PHP Build
+
+| Input             | Default                                          | Description                                    |
+| ----------------- | ------------------------------------------------ | ---------------------------------------------- |
+| `php_version`     | `8.3`                                            | PHP version to install.                        |
+| `extensions`      | `mbstring, dom, zip`                             | Comma-separated extensions to enable.          |
+| `tools`           | `composer:v2.5`                                  | Tools to install (via `shivammathur/setup-php`). |
+| `install_command` | `composer install --no-progress --ignore-platform-reqs` | Command used to install dependencies. |
+
+### PHP Lint
+
+| Input             | Default                                          | Description                                           |
+| ----------------- | ------------------------------------------------ | ----------------------------------------------------- |
+| `php_version`     | `8.3`                                            | PHP version to install.                               |
+| `extensions`      | `mbstring, dom, zip`                             | Comma-separated extensions to enable.                 |
+| `tools`           | `composer:v2.5`                                  | Tools to install (via `shivammathur/setup-php`).      |
+| `install_command` | `composer install --no-progress --ignore-platform-reqs` | Command used to install dependencies.        |
+| `lint_commands`   | `""`                                             | Newline-separated commands to run; skipped if empty.  |
