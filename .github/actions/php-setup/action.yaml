@@ -1,0 +1,39 @@
+name: PHP Setup
+description: |
+  Set up PHP with configurable extensions and tools.
+
+outputs:
+  php_version_used:
+    description: "PHP version detected after setup"
+    value: ${{ steps.php-version.outputs.version }}
+
+inputs:
+  php_version:
+    description: "PHP version"
+    required: false
+    default: "8.3"
+
+  extensions:
+    description: "Comma-separated PHP extensions"
+    required: false
+    default: "mbstring, dom, zip"
+
+  tools:
+    description: "PHP tooling to install"
+    required: false
+    default: "composer:v2.5"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up PHP environment
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ inputs.php_version }}
+        extensions: ${{ inputs.extensions }}
+        tools: ${{ inputs.tools }}
+
+    - name: Record PHP version
+      id: php-version
+      shell: bash
+      run: php -v | head -n 1 | { read -r line; echo "version=$line" >> "$GITHUB_OUTPUT"; }

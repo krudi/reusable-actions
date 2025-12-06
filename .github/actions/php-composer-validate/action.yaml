@@ -1,0 +1,22 @@
+name: PHP Composer Validate
+description: |
+  Validate composer.json/composer.lock in the provided working directory.
+
+inputs:
+  working_directory:
+    description: "Working directory containing composer.json/lock"
+    required: false
+    default: "."
+
+  validate_command:
+    description: "Command used to validate composer files"
+    required: false
+    default: "composer validate"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Validate composer files
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: ${{ inputs.validate_command }}

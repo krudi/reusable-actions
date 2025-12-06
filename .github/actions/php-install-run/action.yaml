@@ -1,0 +1,53 @@
+name: PHP Install Run
+description: |
+  Install PHP dependencies (no checkout or setup). Run after php-setup and composer cache.
+
+outputs:
+  php_version_used:
+    description: "PHP version detected before install"
+    value: ${{ steps.php-version.outputs.version }}
+  install_status:
+    description: "Dependency install status"
+    value: ${{ steps.install-status.outputs.install_status }}
+
+inputs:
+  working_directory:
+    description: "Directory to run Composer commands in"
+    required: false
+    default: "."
+
+  install_command:
+    description: "Command to install PHP dependencies"
+    required: false
+    default: "composer install --no-progress --ignore-platform-reqs"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Record PHP version
+      id: php-version
+      shell: bash
+      run: php -v | head -n 1 | { read -r line; echo "version=$line" >> "$GITHUB_OUTPUT"; }
+
+    - name: Install dependencies
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: ${{ inputs.install_command }}
+
+    - name: Set install status output
+      id: install-status
+      shell: bash
+      run: echo "install_status=passed" >> "$GITHUB_OUTPUT"
+
+    - name: Write summary
+      shell: bash
+      env:
+        PHP_VERSION: ${{ steps.php-version.outputs.version }}
+        INSTALL_STATUS: ${{ steps.install-status.outputs.install_status }}
+      run: |
+        {
+          echo "## PHP Install"
+          echo ""
+          echo "- PHP version: ${PHP_VERSION:-unknown}"
+          echo "- Install status: ${INSTALL_STATUS:-unknown}"
+        } >> "$GITHUB_STEP_SUMMARY"

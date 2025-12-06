@@ -1,0 +1,38 @@
+name: CI Command
+description: |
+  Run an arbitrary CI command passed via input.
+
+outputs:
+  command_run:
+    description: "Command executed"
+    value: ${{ steps.run-command.outputs.command_run }}
+  exit_code:
+    description: "Exit code of the command"
+    value: ${{ steps.run-command.outputs.exit_code }}
+  duration_ms:
+    description: "Duration of the command in milliseconds"
+    value: ${{ steps.run-command.outputs.duration_ms }}
+
+inputs:
+  command:
+    description: "Command to run"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run command
+      id: run-command
+      shell: bash
+      run: |
+        start=$(date +%s%3N)
+        set +e
+        ${{ inputs.command }}
+        code=$?
+        end=$(date +%s%3N)
+        {
+          echo "command_run=${{ inputs.command }}"
+          echo "exit_code=$code"
+          echo "duration_ms=$((end-start))"
+        } >> "$GITHUB_OUTPUT"
+        exit $code

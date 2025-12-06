@@ -1,0 +1,26 @@
+name: Node Next.js Cache
+description: |
+  Cache npm modules and Next.js build artifacts.
+
+outputs:
+  cache_primary_key:
+    description: "Cache key used for the Next.js cache step"
+    value: ${{ steps.cache-output.outputs.cache_primary_key }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Cache node modules and Next.js build cache
+      id: cache-nextjs
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.npm
+          ${{ github.workspace }}/.next/cache
+        key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+        restore-keys: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+
+    - name: Set cache output
+      id: cache-output
+      shell: bash
+      run: echo "cache_primary_key=${{ steps.cache-nextjs.outputs.cache-primary-key }}" >> "$GITHUB_OUTPUT"

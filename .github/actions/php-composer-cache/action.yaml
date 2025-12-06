@@ -1,0 +1,37 @@
+name: PHP Composer Cache
+description: |
+  Cache Composer dependencies (cache + vendor) keyed by lock files.
+
+outputs:
+  cache_primary_key:
+    description: "Cache key used for the Composer cache step"
+    value: ${{ steps.cache-output.outputs.cache_primary_key }}
+
+inputs:
+  php_version:
+    description: "PHP version used in cache key"
+    required: false
+    default: "8.3"
+
+  working_directory:
+    description: "Working directory containing composer.json/lock"
+    required: false
+    default: "."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Cache Composer dependencies
+      id: composer-cache
+      uses: actions/cache@v4
+      with:
+        key: "php${{ inputs.php_version }}-composer-${{ hashFiles(format('{0}/composer.lock', inputs.working_directory)) }}-${{ hashFiles(format('{0}/composer.json', inputs.working_directory)) }}"
+        path: |
+          ~/.cache/composer
+          ${{ inputs.working_directory }}/vendor
+        restore-keys: "php${{ inputs.php_version }}-composer-${{ hashFiles(format('{0}/composer.lock', inputs.working_directory)) }}-"
+
+    - name: Set cache output
+      id: cache-output
+      shell: bash
+      run: echo "cache_primary_key=${{ steps.composer-cache.outputs.cache-primary-key }}" >> "$GITHUB_OUTPUT"

@@ -1,46 +1,54 @@
 name: Node Build
-description: Build a Node.js project (install + build), with optional Next.js caching
+description: |
+  Build Node.js projects (no checkout or setup). Run after node-setup and install.
+
+outputs:
+  node_version_used:
+    description: "Node.js version detected before build"
+    value: ${{ steps.node-version.outputs.version }}
+  build_status:
+    description: "Build result status"
+    value: ${{ steps.build-status.outputs.build_status }}
 
 inputs:
-    node_version:
-        description: 'Node.js version'
-        required: false
-        default: '22.18.0'
+  build_command:
+    description: "Command to build the project"
+    required: false
+    default: "npm run build"
 
-    nextjs:
-        description: 'Enable Next.js cache (.next/cache)'
-        required: false
-        default: 'false'
+  working_directory:
+    description: "Directory to run build in"
+    required: false
+    default: "."
 
 runs:
-    using: 'composite'
-    steps:
-        - name: Checkout repository
-          uses: actions/checkout@v5
+  using: "composite"
+  steps:
+    - name: Record Node.js version
+      id: node-version
+      shell: bash
+      run: echo "version=$(node --version)" >> "$GITHUB_OUTPUT"
 
-        - name: Set up Node.js environment
-          uses: actions/setup-node@v6
-          with:
-              node-version: ${{ inputs.node_version }}
-              cache: npm
+    - name: Compile and build
+      id: build
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: ${{ inputs.build_command }}
 
-        - name: Cache node modules and Next.js build cache
-          if: ${{ inputs.nextjs == 'true' }}
-          uses: actions/cache@v4
-          with:
-              path: |
-                  ~/.npm
-                  ${{ github.workspace }}/.next/cache
-              key:
-                  ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.js', '**/*.jsx',
-                  '**/*.ts', '**/*.tsx') }}
-              restore-keys: |
-                  ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+    - name: Set build status output
+      id: build-status
+      shell: bash
+      run: echo "build_status=passed" >> "$GITHUB_OUTPUT"
 
-        - name: Install dependencies
-          shell: bash
-          run: npm install
-
-        - name: Compile and build
-          shell: bash
-          run: npm run build
+    - name: Write summary
+      shell: bash
+      env:
+        NODE_VERSION: ${{ steps.node-version.outputs.version }}
+        BUILD_STATUS: ${{ steps.build-status.outputs.build_status }}
+      run: |
+        {
+          echo "## Node Build"
+          echo ""
+          echo "- Node version: ${NODE_VERSION:-unknown}"
+          echo "- Build status: ${BUILD_STATUS:-unknown}"
+        } >> "$GITHUB_STEP_SUMMARY"

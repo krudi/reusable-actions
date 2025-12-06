@@ -1,0 +1,27 @@
+name: PHP Deploy
+description: |
+  Run a Deployer command with provided SSH configuration and keys.
+
+inputs:
+  dep_command:
+    description: "Deployer command to run"
+    required: false
+    default: "dep deploy production"
+
+  known_hosts:
+    description: "Known hosts entries for SSH"
+    required: true
+
+  private_key:
+    description: "SSH private key for Deployer"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Deploy with Deployer
+      uses: deployphp/action@v1
+      with:
+        dep: ${{ inputs.dep_command }}
+        known-hosts: ${{ inputs.known_hosts }}
+        private-key: ${{ inputs.private_key }}
