@@ -2,43 +2,45 @@ name: Node Build
 description: Build a Node.js project (install + build), with optional Next.js caching
 
 inputs:
-  node_version:
-    description: "Node.js version"
-    required: false
-    default: "22.18.0"
+    node_version:
+        description: 'Node.js version'
+        required: false
+        default: '22.18.0'
 
-  nextjs:
-    description: "Enable Next.js cache (.next/cache)"
-    required: false
-    default: "false"
+    nextjs:
+        description: 'Enable Next.js cache (.next/cache)'
+        required: false
+        default: 'false'
 
 runs:
-  using: "composite"
-  steps:
-    - name: Checkout repository
-      uses: actions/checkout@v5
+    using: 'composite'
+    steps:
+        - name: Checkout repository
+          uses: actions/checkout@v5
 
-    - name: Set up Node.js environment
-      uses: actions/setup-node@v6
-      with:
-        node-version: ${{ inputs.node_version }}
-        cache: npm
+        - name: Set up Node.js environment
+          uses: actions/setup-node@v6
+          with:
+              node-version: ${{ inputs.node_version }}
+              cache: npm
 
-    - name: Cache node modules and Next.js build cache
-      if: ${{ inputs.nextjs == 'true' }}
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.npm
-          ${{ github.workspace }}/.next/cache
-        key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
-        restore-keys: |
-          ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+        - name: Cache node modules and Next.js build cache
+          if: ${{ inputs.nextjs == 'true' }}
+          uses: actions/cache@v4
+          with:
+              path: |
+                  ~/.npm
+                  ${{ github.workspace }}/.next/cache
+              key:
+                  ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.js', '**/*.jsx',
+                  '**/*.ts', '**/*.tsx') }}
+              restore-keys: |
+                  ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
 
-    - name: Install dependencies
-      shell: bash
-      run: npm install
+        - name: Install dependencies
+          shell: bash
+          run: npm install
 
-    - name: Compile and build
-      shell: bash
-      run: npm run build
+        - name: Compile and build
+          shell: bash
+          run: npm run build

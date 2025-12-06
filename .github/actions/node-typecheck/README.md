@@ -1,7 +1,6 @@
 # Typecheck action
 
-Install dependencies and run a TypeScript typecheck (or any single script you
-specify).
+Install dependencies and run a TypeScript typecheck (or any single script you specify).
 
 ## Usage
 

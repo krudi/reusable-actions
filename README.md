@@ -1,7 +1,7 @@
 # Reusable GitHub Actions
 
-Composite actions for common Node.js steps. Keep workflows lean by reusing these
-blocks instead of duplicating setup logic across repos.
+Composite actions for common Node.js steps. Keep workflows lean by reusing these blocks instead of duplicating setup
+logic across repos.
 
 ## Actions at a glance
 
@@ -14,8 +14,7 @@ blocks instead of duplicating setup logic across repos.
 ## Quick start
 
 1. Create a workflow in your project (e.g. `.github/workflows/ci.yaml`).
-2. Use the action you need:
-   `uses: krudi/reusable-actions/.github/actions/<action>@main`.
+2. Use the action you need: `uses: krudi/reusable-actions/.github/actions/<action>@main`.
 
 Usage examples (with inputs) live alongside each action:
 

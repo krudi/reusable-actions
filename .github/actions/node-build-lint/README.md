@@ -1,7 +1,6 @@
 # Node Lint action
 
-Install dependencies, optionally cache Next.js builds, and run one or more lint
-scripts.
+Install dependencies, optionally cache Next.js builds, and run one or more lint scripts.
 
 ## Usage
 
