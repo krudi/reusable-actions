@@ -1,0 +1,87 @@
+name: npm Publish
+description: Publish npm packages with optional workspace support and provenance.
+
+inputs:
+  workspace:
+    description: "Workspace name to publish. Leave blank to publish the root package."
+    required: false
+    default: ""
+  tag:
+    description: "Package tag (e.g. @scope/pkg@1.0.0) used to derive workspace when not provided."
+    required: false
+    default: ""
+  access:
+    description: "Access level passed to npm publish."
+    required: false
+    default: "public"
+  provenance:
+    description: "Whether to enable npm provenance."
+    required: false
+    default: "true"
+  npm_token:
+    description: "NPM token (falls back to NODE_AUTH_TOKEN env if not provided)."
+    required: false
+    default: ""
+  extra_args:
+    description: "Additional args to pass to npm publish."
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Configure npm auth
+      shell: bash
+      env:
+        INPUT_NPM_TOKEN: ${{ inputs.npm_token }}
+      run: |
+        TOKEN="${INPUT_NPM_TOKEN:-${NODE_AUTH_TOKEN:-}}"
+        if [ -n "$TOKEN" ]; then
+          npm config set "//registry.npmjs.org/:_authToken" "$TOKEN"
+        else
+          echo "Warning: npm token not provided; publish may fail."
+        fi
+
+    - name: Publish package
+      shell: bash
+      env:
+        INPUT_WORKSPACE: ${{ inputs.workspace }}
+        INPUT_TAG: ${{ inputs.tag }}
+        INPUT_ACCESS: ${{ inputs.access }}
+        INPUT_PROVENANCE: ${{ inputs.provenance }}
+        INPUT_EXTRA_ARGS: ${{ inputs.extra_args }}
+      run: |
+        set -euo pipefail
+
+        WORKSPACE="$INPUT_WORKSPACE"
+        TAG="$INPUT_TAG"
+        ACCESS="${INPUT_ACCESS:-public}"
+        PROVENANCE="${INPUT_PROVENANCE:-true}"
+        EXTRA_ARGS="$INPUT_EXTRA_ARGS"
+
+        if [ -z "$WORKSPACE" ] && [ -n "$TAG" ] && [[ "$TAG" == *@* ]]; then
+          WORKSPACE="${TAG%@*}"
+        fi
+
+        if [ -z "$TAG" ] && [ -n "${GITHUB_REF_NAME:-}" ]; then
+          TAG="$GITHUB_REF_NAME"
+          if [ -z "$WORKSPACE" ] && [[ "$TAG" == *@* ]]; then
+            WORKSPACE="${TAG%@*}"
+          fi
+        fi
+
+        PUBLISH_ARGS="--access ${ACCESS:-public}"
+        if [ "${PROVENANCE,,}" = "true" ]; then
+          PUBLISH_ARGS="$PUBLISH_ARGS --provenance"
+        fi
+        if [ -n "$EXTRA_ARGS" ]; then
+          PUBLISH_ARGS="$PUBLISH_ARGS $EXTRA_ARGS"
+        fi
+
+        if [ -n "$WORKSPACE" ]; then
+          echo "Publishing workspace '$WORKSPACE' with args: $PUBLISH_ARGS"
+          npm publish --workspace="$WORKSPACE" $PUBLISH_ARGS
+        else
+          echo "Publishing root package with args: $PUBLISH_ARGS"
+          npm publish $PUBLISH_ARGS
+        fi

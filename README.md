@@ -17,7 +17,7 @@ setup logic across repos.
 | Node Install       | `.github/actions/node-install`          | Install Node dependencies (no checkout/setup).            |
 | Node Build         | `.github/actions/node-build`            | Build Node projects (no checkout/setup).                  |
 | Node Next Cache    | `.github/actions/node-next-cache`       | Cache npm and `.next/cache`.                              |
-| npm Workspace Pub  | `.github/actions/npm-workspace-publish` | Publish npm workspace packages with provenance.           |
+| npm Publish        | `.github/actions/npm-publish`       | Publish npm packages (workspace or root) with provenance. |
 | PHP Setup          | `.github/actions/php-setup`             | Set up PHP with extensions/tools.                         |
 | PHP Composer Cache | `.github/actions/php-composer-cache`    | Cache Composer deps and vendor.                           |
 | PHP Install Run    | `.github/actions/php-install-run`       | Install PHP dependencies (no checkout/setup).             |
@@ -36,7 +36,7 @@ Usage examples (with inputs) live alongside each action:
 - [`node-install`](.github/actions/node-install/README.md)
 - [`node-build`](.github/actions/node-build/README.md)
 - [`node-next-cache`](.github/actions/node-next-cache/README.md)
-- [`npm-workspace-publish`](.github/actions/npm-workspace-publish/README.md)
+- [`npm-publish`](.github/actions/npm-publish/README.md)
 - [`php-setup`](.github/actions/php-setup/README.md)
 - [`php-composer-cache`](.github/actions/php-composer-cache/README.md)
 - [`php-install-run`](.github/actions/php-install-run/README.md)
