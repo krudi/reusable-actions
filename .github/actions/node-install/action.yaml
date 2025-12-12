@@ -14,7 +14,7 @@ inputs:
   install_command:
     description: "Command to install dependencies"
     required: false
-    default: "npm ci"
+    default: "npm install"
 
   working_directory:
     description: "Directory to run install command in"
