@@ -11,7 +11,7 @@ inputs:
   node_version:
     description: "Node.js version (e.g. 22.18.0)"
     required: false
-    default: "22.18.0"
+    default: "24.14.0"
 
   node_version_file:
     description: "File containing the Node.js version (e.g. .nvmrc, .node-version)"
