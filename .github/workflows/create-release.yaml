@@ -1,0 +1,260 @@
+name: Create Release
+
+on:
+    workflow_call:
+        inputs:
+            version:
+                description: 'Release version without the tag prefix'
+                required: true
+                type: string
+            create_latest:
+                description: 'Mark the GitHub release as latest'
+                required: false
+                type: boolean
+                default: true
+            working_directory:
+                description: 'Repository directory where npm version should run'
+                required: false
+                type: string
+                default: '.'
+            workspace:
+                description: 'Workspace package name to version'
+                required: false
+                type: string
+                default: ''
+            package_json_path:
+                description: 'Path to the package.json that owns the released version'
+                required: false
+                type: string
+                default: 'package.json'
+            package_lock_path:
+                description: 'Path to the package-lock.json to commit, if present'
+                required: false
+                type: string
+                default: 'package-lock.json'
+            node_version_file:
+                description: 'Node version file path'
+                required: false
+                type: string
+                default: '.nvmrc'
+            tag_prefix:
+                description: 'Tag prefix such as v or @scope/pkg@'
+                required: false
+                type: string
+                default: 'v'
+            commit_message:
+                description: 'Commit message template. {old}, {new}, {tag}, and {package} are replaced.'
+                required: false
+                type: string
+                default: 'chore(release): bump {package} from {old} to {new}'
+            extra_commit_paths:
+                description: 'Extra newline-separated paths to include in the release commit'
+                required: false
+                type: string
+                default: ''
+            checkout_fetch_depth:
+                description: 'Git history depth for checkout'
+                required: false
+                type: string
+                default: '0'
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+
+        steps:
+            - uses: ./.github/actions/github-checkout
+              with:
+                  fetch_depth: ${{ inputs.checkout_fetch_depth }}
+
+            - uses: ./.github/actions/node-setup
+              with:
+                  cache: npm
+                  node_version_file: ${{ inputs.node_version_file }}
+
+            - name: Validate release input
+              shell: bash
+              env:
+                  VERSION: ${{ inputs.version }}
+              run: |
+                  if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+                    echo "Version must be a semantic version like 0.5.0 or 0.5.0-beta.1."
+                    exit 1
+                  fi
+
+            - name: Read current package metadata
+              id: package-meta
+              shell: bash
+              env:
+                  PACKAGE_JSON_PATH: ${{ inputs.package_json_path }}
+                  TAG_PREFIX: ${{ inputs.tag_prefix }}
+                  NEW_VERSION: ${{ inputs.version }}
+              run: |
+                  set -euo pipefail
+                  OLD_VERSION="$(node -p "require('./${PACKAGE_JSON_PATH}').version")"
+                  PACKAGE_NAME="$(node -p "require('./${PACKAGE_JSON_PATH}').name || ''")"
+
+                  if [ "$OLD_VERSION" = "$NEW_VERSION" ]; then
+                    echo "Version ${NEW_VERSION} is already set in ${PACKAGE_JSON_PATH}."
+                    exit 1
+                  fi
+
+                  echo "old_version=$OLD_VERSION" >> "$GITHUB_OUTPUT"
+                  echo "package_name=$PACKAGE_NAME" >> "$GITHUB_OUTPUT"
+                  echo "tag=${TAG_PREFIX}${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+
+            - name: Ensure release tag does not exist
+              shell: bash
+              env:
+                  TAG_NAME: ${{ steps.package-meta.outputs.tag }}
+              run: |
+                  set -euo pipefail
+                  git fetch --tags origin
+
+                  if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+                    echo "Tag '$TAG_NAME' already exists locally."
+                    exit 1
+                  fi
+
+                  if git ls-remote --exit-code --tags origin "refs/tags/$TAG_NAME" >/dev/null 2>&1; then
+                    echo "Tag '$TAG_NAME' already exists on origin."
+                    exit 1
+                  fi
+
+            - name: Bump package version
+              shell: bash
+              working-directory: ${{ inputs.working_directory }}
+              env:
+                  NEW_VERSION: ${{ inputs.version }}
+                  WORKSPACE: ${{ inputs.workspace }}
+              run: |
+                  set -euo pipefail
+
+                  if [ -n "$WORKSPACE" ]; then
+                    npm version "$NEW_VERSION" --workspace="$WORKSPACE" --no-git-tag-version
+                  else
+                    npm version "$NEW_VERSION" --no-git-tag-version
+                  fi
+
+            - name: Verify release file version
+              shell: bash
+              env:
+                  PACKAGE_JSON_PATH: ${{ inputs.package_json_path }}
+                  NEW_VERSION: ${{ inputs.version }}
+              run: |
+                  set -euo pipefail
+                  ACTUAL_VERSION="$(node -p "require('./${PACKAGE_JSON_PATH}').version")"
+
+                  if [ "$ACTUAL_VERSION" != "$NEW_VERSION" ]; then
+                    echo "Expected ${PACKAGE_JSON_PATH} version '$NEW_VERSION' but found '$ACTUAL_VERSION'."
+                    exit 1
+                  fi
+
+            - name: Ensure only expected files changed
+              shell: bash
+              env:
+                  PACKAGE_JSON_PATH: ${{ inputs.package_json_path }}
+                  PACKAGE_LOCK_PATH: ${{ inputs.package_lock_path }}
+                  EXTRA_COMMIT_PATHS: ${{ inputs.extra_commit_paths }}
+              run: |
+                  set -euo pipefail
+
+                  mapfile -t changed_files < <(git status --porcelain | awk '{print $2}')
+
+                  if [ ${#changed_files[@]} -eq 0 ]; then
+                    echo "No files changed after version bump."
+                    exit 1
+                  fi
+
+                  allowed=("$PACKAGE_JSON_PATH")
+                  if [ -n "$PACKAGE_LOCK_PATH" ] && [ -f "$PACKAGE_LOCK_PATH" ]; then
+                    allowed+=("$PACKAGE_LOCK_PATH")
+                  fi
+
+                  if [ -n "$EXTRA_COMMIT_PATHS" ]; then
+                    while IFS= read -r path; do
+                      [ -n "$path" ] && allowed+=("$path")
+                    done <<< "$EXTRA_COMMIT_PATHS"
+                  fi
+
+                  for file in "${changed_files[@]}"; do
+                    ok=false
+                    for allowed_file in "${allowed[@]}"; do
+                      if [ "$file" = "$allowed_file" ]; then
+                        ok=true
+                        break
+                      fi
+                    done
+
+                    if [ "$ok" = false ]; then
+                      echo "Unexpected changed file after version bump: $file"
+                      printf 'Allowed files:\n%s\n' "${allowed[@]}"
+                      exit 1
+                    fi
+                  done
+
+            - name: Commit version bump
+              shell: bash
+              env:
+                  PACKAGE_JSON_PATH: ${{ inputs.package_json_path }}
+                  PACKAGE_LOCK_PATH: ${{ inputs.package_lock_path }}
+                  EXTRA_COMMIT_PATHS: ${{ inputs.extra_commit_paths }}
+                  COMMIT_TEMPLATE: ${{ inputs.commit_message }}
+                  OLD_VERSION: ${{ steps.package-meta.outputs.old_version }}
+                  NEW_VERSION: ${{ inputs.version }}
+                  TAG_NAME: ${{ steps.package-meta.outputs.tag }}
+                  PACKAGE_NAME: ${{ steps.package-meta.outputs.package_name }}
+              run: |
+                  set -euo pipefail
+
+                  COMMIT_MESSAGE="${COMMIT_TEMPLATE//\{old\}/$OLD_VERSION}"
+                  COMMIT_MESSAGE="${COMMIT_MESSAGE//\{new\}/$NEW_VERSION}"
+                  COMMIT_MESSAGE="${COMMIT_MESSAGE//\{tag\}/$TAG_NAME}"
+                  COMMIT_MESSAGE="${COMMIT_MESSAGE//\{package\}/$PACKAGE_NAME}"
+
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  git add "$PACKAGE_JSON_PATH"
+
+                  if [ -n "$PACKAGE_LOCK_PATH" ] && [ -f "$PACKAGE_LOCK_PATH" ]; then
+                    git add "$PACKAGE_LOCK_PATH"
+                  fi
+
+                  if [ -n "$EXTRA_COMMIT_PATHS" ]; then
+                    while IFS= read -r path; do
+                      [ -n "$path" ] && git add "$path"
+                    done <<< "$EXTRA_COMMIT_PATHS"
+                  fi
+
+                  git commit -m "$COMMIT_MESSAGE"
+                  git push origin "HEAD:${GITHUB_REF_NAME}"
+
+            - name: Create tag
+              shell: bash
+              env:
+                  TAG_NAME: ${{ steps.package-meta.outputs.tag }}
+              run: |
+                  set -euo pipefail
+                  git tag "$TAG_NAME"
+                  git push origin "$TAG_NAME"
+
+            - name: Create GitHub release
+              shell: bash
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  TAG_NAME: ${{ steps.package-meta.outputs.tag }}
+                  CREATE_LATEST: ${{ inputs.create_latest }}
+              run: |
+                  set -euo pipefail
+
+                  LATEST_FLAG="--latest=false"
+                  if [ "$CREATE_LATEST" = "true" ]; then
+                    LATEST_FLAG="--latest"
+                  fi
+
+                  gh release create "$TAG_NAME" \
+                    --title "$TAG_NAME" \
+                    --generate-notes \
+                    $LATEST_FLAG

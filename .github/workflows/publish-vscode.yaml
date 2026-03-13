@@ -1,0 +1,117 @@
+name: Publish VS Code Extension
+
+on:
+    workflow_call:
+        inputs:
+            working_directory:
+                description: 'Directory containing the extension'
+                required: false
+                type: string
+                default: '.'
+            install_command:
+                description: 'Command used to install dependencies'
+                required: false
+                type: string
+                default: 'npm install'
+            check_command:
+                description: 'Command used to validate the package before publishing'
+                required: false
+                type: string
+                default: ''
+            package_command:
+                description: 'Command used to build the VSIX package'
+                required: false
+                type: string
+                default: 'npx @vscode/vsce package'
+            publish_command:
+                description: 'Command used to publish to the VS Code Marketplace'
+                required: false
+                type: string
+                default: 'npx @vscode/vsce publish -p "$VSCE_PAT"'
+            node_version_file:
+                description: 'Node version file path'
+                required: false
+                type: string
+                default: '.nvmrc'
+            vsce_glob:
+                description: 'Glob for the generated VSIX artifact'
+                required: false
+                type: string
+                default: '*.vsix'
+            checkout_fetch_depth:
+                description: 'Git history depth for checkout'
+                required: false
+                type: string
+                default: '1'
+            release_latest:
+                description: 'Whether the release should be considered latest when a release asset is uploaded'
+                required: false
+                type: boolean
+                default: true
+        secrets:
+            VSCE_PAT:
+                description: 'Token used to publish to the Visual Studio Marketplace'
+                required: true
+            GITHUB_TOKEN:
+                description: 'Token used to upload release assets'
+                required: false
+
+jobs:
+    publish:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+
+        steps:
+            - uses: ./.github/actions/github-checkout
+              with:
+                  fetch_depth: ${{ inputs.checkout_fetch_depth }}
+
+            - uses: ./.github/actions/node-setup
+              with:
+                  cache: npm
+                  node_version_file: ${{ inputs.node_version_file }}
+
+            - uses: ./.github/actions/node-install
+              with:
+                  install_command: ${{ inputs.install_command }}
+                  working_directory: ${{ inputs.working_directory }}
+
+            - uses: ./.github/actions/ci-command
+              if: ${{ inputs.check_command != '' }}
+              with:
+                  command: ${{ inputs.check_command }}
+                  working_directory: ${{ inputs.working_directory }}
+
+            - uses: ./.github/actions/ci-command
+              if: ${{ inputs.package_command != '' }}
+              with:
+                  command: ${{ inputs.package_command }}
+                  working_directory: ${{ inputs.working_directory }}
+
+            - name: Upload VSIX to GitHub release
+              if: ${{ secrets.GITHUB_TOKEN != '' && github.ref_type == 'tag' }}
+              shell: bash
+              working-directory: ${{ inputs.working_directory }}
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  VSCE_GLOB: ${{ inputs.vsce_glob }}
+              run: |
+                  set -euo pipefail
+                  shopt -s nullglob
+                  files=($VSCE_GLOB)
+
+                  if [ ${#files[@]} -eq 0 ]; then
+                    echo "No VSIX files matched '$VSCE_GLOB'."
+                    exit 1
+                  fi
+
+                  gh release upload "$GITHUB_REF_NAME" "${files[@]}" --clobber
+
+            - uses: ./.github/actions/ci-command
+              if: ${{ inputs.publish_command != '' }}
+              with:
+                  command: ${{ inputs.publish_command }}
+                  working_directory: ${{ inputs.working_directory }}
+              env:
+                  VSCE_PAT: ${{ secrets.VSCE_PAT }}

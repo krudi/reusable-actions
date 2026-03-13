@@ -1,28 +1,36 @@
 name: GitHub Checkout
 description: |
-  Checkout the repository at the current ref.
+    Checkout the repository at the current ref.
 
 outputs:
-  checked_sha:
-    description: "Commit SHA checked out"
-    value: ${{ steps.checkout-meta.outputs.sha }}
-  checked_ref:
-    description: "Ref checked out (branch/tag)"
-    value: ${{ steps.checkout-meta.outputs.ref }}
+    checked_sha:
+        description: 'Commit SHA checked out'
+        value: ${{ steps.checkout-meta.outputs.sha }}
+    checked_ref:
+        description: 'Ref checked out (branch/tag)'
+        value: ${{ steps.checkout-meta.outputs.ref }}
+
+inputs:
+    fetch_depth:
+        description: 'History depth to fetch'
+        required: false
+        default: '1'
 
 runs:
-  using: "composite"
-  steps:
-    - name: Checkout repository
-      uses: actions/checkout@v5
+    using: 'composite'
+    steps:
+        - name: Checkout repository
+          uses: actions/checkout@v5
+          with:
+              fetch-depth: ${{ inputs.fetch_depth }}
 
-    - name: Record checkout metadata
-      id: checkout-meta
-      shell: bash
-      run: |
-        sha=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
-        ref="${GITHUB_REF:-unknown}"
-        {
-          echo "sha=$sha"
-          echo "ref=$ref"
-        } >> "$GITHUB_OUTPUT"
+        - name: Record checkout metadata
+          id: checkout-meta
+          shell: bash
+          run: |
+              sha=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+              ref="${GITHUB_REF:-unknown}"
+              {
+                echo "sha=$sha"
+                echo "ref=$ref"
+              } >> "$GITHUB_OUTPUT"

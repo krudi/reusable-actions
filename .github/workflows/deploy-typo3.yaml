@@ -1,0 +1,87 @@
+name: Deploy TYPO3
+
+on:
+    workflow_call:
+        inputs:
+            php_version:
+                description: 'PHP version used for the deploy job'
+                required: false
+                type: string
+                default: '8.4'
+            composer_install_command:
+                description: 'Composer command used to install and prepare deployment dependencies'
+                required: false
+                type: string
+                default: 'composer install --verbose --prefer-dist --no-progress --no-interaction --no-dev'
+            node_version_file:
+                description: 'Node version file path'
+                required: false
+                type: string
+                default: '.nvmrc'
+            node_install_command:
+                description: 'Command used to install frontend dependencies'
+                required: false
+                type: string
+                default: 'npm install'
+            node_build_command:
+                description: 'Command used to build frontend assets'
+                required: false
+                type: string
+                default: 'npm run build'
+            dep_command:
+                description: 'Deployer command to run'
+                required: false
+                type: string
+                default: 'deploy production'
+        secrets:
+            SSH_SERVER_HOSTS:
+                description: 'Known hosts entries for SSH'
+                required: true
+            SSH_PRIVATE_KEY:
+                description: 'SSH private key used by Deployer'
+                required: true
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+
+        steps:
+            - uses: ./.github/actions/github-checkout
+
+            - uses: ./.github/actions/php-setup
+              with:
+                  php_version: ${{ inputs.php_version }}
+
+            - name: Validate composer files
+              shell: bash
+              run: composer validate
+
+            - uses: ./.github/actions/php-composer-cache
+              with:
+                  php_version: ${{ inputs.php_version }}
+
+            - uses: ./.github/actions/php-install-run
+              with:
+                  install_command: ${{ inputs.composer_install_command }}
+
+            - uses: ./.github/actions/node-setup
+              with:
+                  cache: npm
+                  node_version_file: ${{ inputs.node_version_file }}
+
+            - uses: ./.github/actions/node-install
+              with:
+                  install_command: ${{ inputs.node_install_command }}
+
+            - uses: ./.github/actions/node-build
+              with:
+                  build_command: ${{ inputs.node_build_command }}
+
+            - name: Deploy with Deployer
+              uses: deployphp/action@v1
+              with:
+                  dep: ${{ inputs.dep_command }}
+                  known-hosts: ${{ secrets.SSH_SERVER_HOSTS }}
+                  private-key: ${{ secrets.SSH_PRIVATE_KEY }}

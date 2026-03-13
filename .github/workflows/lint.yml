@@ -1,36 +1,36 @@
 name: Lint
 
 on:
-  pull_request:
-    types:
-      - opened
-      - synchronize
-      - reopened
+    pull_request:
+        types:
+            - opened
+            - synchronize
+            - reopened
 
 concurrency:
-  group: lint-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    group: lint-${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
 
 permissions:
-  contents: read
+    contents: read
 
 jobs:
-  lint:
-    if: ${{ github.actor != 'dependabot[bot]' }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        lint-commands:
-          - "npm run lint:prettier"
+    lint:
+        if: ${{ github.actor != 'dependabot[bot]' }}
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                lint-commands:
+                    - 'npm run lint:prettier'
 
-    steps:
-      - uses: ./.github/actions/github-checkout
+        steps:
+            - uses: ./.github/actions/github-checkout
 
-      - uses: ./.github/actions/node-setup
+            - uses: ./.github/actions/node-setup
 
-      - uses: ./.github/actions/node-install
+            - uses: ./.github/actions/node-install
 
-      - uses: ./.github/actions/ci-command
-        with:
-          command: ${{ matrix.lint-commands }}
+            - uses: ./.github/actions/ci-command
+              with:
+                  command: ${{ matrix.lint-commands }}

@@ -1,54 +1,54 @@
 name: Node Build
 description: |
-  Build Node.js projects (no checkout or setup). Run after node-setup and install.
+    Build Node.js projects (no checkout or setup). Run after node-setup and install.
 
 outputs:
-  node_version_used:
-    description: "Node.js version detected before build"
-    value: ${{ steps.node-version.outputs.version }}
-  build_status:
-    description: "Build result status"
-    value: ${{ steps.build-status.outputs.build_status }}
+    node_version_used:
+        description: 'Node.js version detected before build'
+        value: ${{ steps.node-version.outputs.version }}
+    build_status:
+        description: 'Build result status'
+        value: ${{ steps.build-status.outputs.build_status }}
 
 inputs:
-  build_command:
-    description: "Command to build the project"
-    required: false
-    default: "npm run build"
+    build_command:
+        description: 'Command to build the project'
+        required: false
+        default: 'npm run build'
 
-  working_directory:
-    description: "Directory to run build in"
-    required: false
-    default: "."
+    working_directory:
+        description: 'Directory to run build in'
+        required: false
+        default: '.'
 
 runs:
-  using: "composite"
-  steps:
-    - name: Record Node.js version
-      id: node-version
-      shell: bash
-      run: echo "version=$(node --version)" >> "$GITHUB_OUTPUT"
+    using: 'composite'
+    steps:
+        - name: Record Node.js version
+          id: node-version
+          shell: bash
+          run: echo "version=$(node --version)" >> "$GITHUB_OUTPUT"
 
-    - name: Compile and build
-      id: build
-      shell: bash
-      working-directory: ${{ inputs.working_directory }}
-      run: ${{ inputs.build_command }}
+        - name: Compile and build
+          id: build
+          shell: bash
+          working-directory: ${{ inputs.working_directory }}
+          run: ${{ inputs.build_command }}
 
-    - name: Set build status output
-      id: build-status
-      shell: bash
-      run: echo "build_status=passed" >> "$GITHUB_OUTPUT"
+        - name: Set build status output
+          id: build-status
+          shell: bash
+          run: echo "build_status=passed" >> "$GITHUB_OUTPUT"
 
-    - name: Write summary
-      shell: bash
-      env:
-        NODE_VERSION: ${{ steps.node-version.outputs.version }}
-        BUILD_STATUS: ${{ steps.build-status.outputs.build_status }}
-      run: |
-        {
-          echo "## Node Build"
-          echo ""
-          echo "- Node version: ${NODE_VERSION:-unknown}"
-          echo "- Build status: ${BUILD_STATUS:-unknown}"
-        } >> "$GITHUB_STEP_SUMMARY"
+        - name: Write summary
+          shell: bash
+          env:
+              NODE_VERSION: ${{ steps.node-version.outputs.version }}
+              BUILD_STATUS: ${{ steps.build-status.outputs.build_status }}
+          run: |
+              {
+                echo "## Node Build"
+                echo ""
+                echo "- Node version: ${NODE_VERSION:-unknown}"
+                echo "- Build status: ${BUILD_STATUS:-unknown}"
+              } >> "$GITHUB_STEP_SUMMARY"

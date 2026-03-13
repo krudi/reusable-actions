@@ -1,0 +1,141 @@
+name: Publish NPM Package
+
+on:
+    workflow_call:
+        inputs:
+            working_directory:
+                description: 'Directory containing the package or workspace root'
+                required: false
+                type: string
+                default: '.'
+            workspace:
+                description: 'Workspace package name to publish'
+                required: false
+                type: string
+                default: ''
+            build_command:
+                description: 'Command used to build before publishing'
+                required: false
+                type: string
+                default: 'npm run build'
+            check_command:
+                description: 'Command used to validate the package before publishing'
+                required: false
+                type: string
+                default: ''
+            install_command:
+                description: 'Command used to install dependencies'
+                required: false
+                type: string
+                default: 'npm install'
+            node_version_file:
+                description: 'Node version file path'
+                required: false
+                type: string
+                default: '.nvmrc'
+            npm_access:
+                description: 'npm publish access level'
+                required: false
+                type: string
+                default: 'public'
+            npm_provenance:
+                description: 'Enable npm provenance'
+                required: false
+                type: boolean
+                default: true
+            npm_tag:
+                description: 'Release tag used for publish context'
+                required: false
+                type: string
+                default: ''
+            checkout_fetch_depth:
+                description: 'Git history depth for checkout'
+                required: false
+                type: string
+                default: '1'
+        secrets:
+            NODE_AUTH_TOKEN:
+                description: 'Token used for npm publishing'
+                required: false
+
+jobs:
+    publish:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            id-token: write
+
+        steps:
+            - uses: ./.github/actions/github-checkout
+              with:
+                  fetch_depth: ${{ inputs.checkout_fetch_depth }}
+
+            - uses: ./.github/actions/node-setup
+              with:
+                  cache: npm
+                  node_version_file: ${{ inputs.node_version_file }}
+
+            - uses: ./.github/actions/node-install
+              with:
+                  install_command: ${{ inputs.install_command }}
+                  working_directory: ${{ inputs.working_directory }}
+
+            - uses: ./.github/actions/ci-command
+              if: ${{ inputs.check_command != '' }}
+              with:
+                  command: ${{ inputs.check_command }}
+                  working_directory: ${{ inputs.working_directory }}
+
+            - uses: ./.github/actions/node-build
+              if: ${{ inputs.build_command != '' }}
+              with:
+                  build_command: ${{ inputs.build_command }}
+                  working_directory: ${{ inputs.working_directory }}
+
+            - name: Configure npm auth
+              shell: bash
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+              run: |
+                  if [ -n "${NODE_AUTH_TOKEN:-}" ]; then
+                    npm config set "//registry.npmjs.org/:_authToken" "$NODE_AUTH_TOKEN"
+                  else
+                    echo "Warning: npm token not provided; publish may fail."
+                  fi
+
+            - name: Publish package
+              shell: bash
+              working-directory: ${{ inputs.working_directory }}
+              env:
+                  INPUT_WORKSPACE: ${{ inputs.workspace }}
+                  INPUT_TAG: ${{ inputs.npm_tag }}
+                  INPUT_ACCESS: ${{ inputs.npm_access }}
+                  INPUT_PROVENANCE: ${{ inputs.npm_provenance }}
+              run: |
+                  set -euo pipefail
+
+                  WORKSPACE="$INPUT_WORKSPACE"
+                  TAG="$INPUT_TAG"
+                  ACCESS="${INPUT_ACCESS:-public}"
+                  PROVENANCE="${INPUT_PROVENANCE:-true}"
+
+                  if [ -z "$TAG" ] && [ -n "${GITHUB_REF_NAME:-}" ]; then
+                    TAG="$GITHUB_REF_NAME"
+                  fi
+
+                  if [ -z "$WORKSPACE" ] && [ -n "$TAG" ] && [[ "$TAG" == *@* ]]; then
+                    WORKSPACE="${TAG%@*}"
+                  fi
+
+                  PUBLISH_ARGS=(--access "$ACCESS")
+                  if [ "${PROVENANCE,,}" = "true" ]; then
+                    PUBLISH_ARGS+=(--provenance)
+                  fi
+
+                  if [ -n "$WORKSPACE" ]; then
+                    echo "Publishing workspace '$WORKSPACE' with args: ${PUBLISH_ARGS[*]}"
+                    npm publish --workspace="$WORKSPACE" "${PUBLISH_ARGS[@]}"
+                  else
+                    echo "Publishing root package with args: ${PUBLISH_ARGS[*]}"
+                    npm publish "${PUBLISH_ARGS[@]}"
+                  fi
